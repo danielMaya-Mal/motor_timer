@@ -97,6 +97,7 @@ void loop() {
   sprintf(Text," 0%d : 0%d : 0%d",seg,minut,hora);
   lcd.print(Text);
   Valor_b= analogRead(menu);
+  //Serial.println(Valor_b);
   if((Valor_b>=179)&&(Valor_b<=181))acceso=1;
   while(acceso==1)                                      //Ciclo de configuración del tiempo
   {
@@ -114,7 +115,7 @@ void loop() {
       if(minut<10)lcd.print("0");                   //condicional estetico para valores inferiores a 10
       lcd.print(minut);
       Valor_h=analogRead(hours);
-      hora=(Valor_h*24)/1023;                           //transforma la lectura del potenciometro en una escala de 60 para HORAS
+      hora=(Valor_h*24)/1023;                           //transforma la lectura del potenciometro en una escala de 24 para HORAS
       if(hora<0)hora=hora+28;                         //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 28
       lcd.setCursor(10,1);
       if(hora<10)lcd.print("0");                      //condicional estetico para valores inferiores a 10
@@ -163,12 +164,23 @@ void Starter(int seg,int minut, int hora)
   Start=1;                                         //Activa en las interrupciones la ejecucion de la cuenta regresiva
   Timer1.initialize(1000000);                      //Configura el timer en 1 segundo 
   Timer1.attachInterrupt(Temporizador);            //Configura la interrupcion del timer 1
+  lcd.setCursor(1,1);
+  lcd.print("time runing");
   digitalWrite(ENAPIN,LOW);
   do{
       forward(200);
+      if(digitalRead(ACTIONPIN))                   //Condicion de paro de emergencia
+      {
+        digitalWrite(ENAPIN,HIGH);                 //Si la condicion de arriba se cumple, se inhabilita el ENAPIN y para el motor en pleno giro
+        break;                                     // sale del ciclo while que mantiene el giro durante el tiempo determinado
+      }
     }
   while(tiempo_t>0);
-}
+  /*lcd.clear();
+  lcd.print("time out");
+  delay(500);*/
+  lcd.clear();
+  }
 
 void forward(int steps){
   int i;
