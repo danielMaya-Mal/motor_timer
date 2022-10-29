@@ -24,6 +24,10 @@
 //PINES DIGITALES DE AJUSTE DEL TIEMPO 
 #define temp 14
 #define inicio 15
+#define timer 22
+#define inic 23
+
+bool estatus = LOW;
 
 //VARIABLES DE LECTURA ANALOGICA 
 int Valor_s=0;
@@ -48,7 +52,7 @@ const int STEPTIME = 3;
 
 //LIBRERIA DE PANTALLA LCD CON I2C
 //#include "DFRobot_LCD.h"
-LiquidCrystal_I2C lcd(0x3F,20,4); 
+LiquidCrystal_I2C lcd(0x27,20,4); 
 
 //VARIABLES DE PANTALLA LCD 
   const int colorR = 255;
@@ -76,11 +80,11 @@ void setup() {
    //lcd.setRGB(colorR, colorG, colorB);//If the module is a monochrome screen, you need to shield it
    lcd.init();         //prende la pantalla 
    lcd.backlight();
-   lcd.print("prueba");
-   delay(1000);
+   //lcd.print("prueba");
+   //delay(1000);
    lcd.clear();
-   lcd.print("Timer");
-   delay(500);
+   lcd.print("Disolutor 30000");
+   delay(2000);
    lcd.clear();
   /* sprintf(Text," seg min hor");
    lcd.print(Text);
@@ -113,26 +117,26 @@ void loop() {
 //  delay(1);
 
   /*******************************************ARRANQUE DIRECTO DEL MOTOR DE PALAS***********************************************************************/
-  if((Valor_b>=1015)&&(Valor_b<=1023))                  //boton para accionamiento directo del motor de las palas
+  if((Valor_b>=1015)&&(Valor_b<=1023))                    //boton para accionamiento directo del motor de las palas
   {
-    holding=1;                                          //variable que mantendra funcionando al motor tiempo indefinido 
-    while(holding==1)                                   //ciclo condicional para evitar que se repita la intruccion muchas veces y tengamos valores gigantes 
+    holding=1;                                            //variable que mantendra funcionando al motor tiempo indefinido 
+    while(holding==1)                                     //ciclo condicional para evitar que se repita la intruccion muchas veces y tengamos valores gigantes 
     {
       Valor_b=analogRead(menu);
       if(!((Valor_b>=1015) && (Valor_b<=1023)))holding=0;
     }
-    digitalWrite(ENAPIN,LOW);                           //Habilita el enable del motor de las palas
-    while(1)                                   //ciclo de funcionamiento del motor de las palas 
+    digitalWrite(ENAPIN,LOW);                             //Habilita el enable del motor de las palas
+    while(1)                                              //ciclo de funcionamiento del motor de las palas 
     {
-      forward(200);                                     //Funcion que hace girar el motor 
+      forward(200);                                       //Funcion que hace girar el motor 
       Valor_b=analogRead(menu);                         
-      if((Valor_b>=835)&&(Valor_b<=840))                //lectura analogica para el boton de paro directo 
+      if((Valor_b>=835)&&(Valor_b<=840))                  //lectura analogica para el boton de paro directo 
       {
-        digitalWrite(ENAPIN,HIGH);                      //Activa el enable inhabilitando el motor 
+        digitalWrite(ENAPIN,HIGH);                        //Activa el enable inhabilitando el motor 
        // holding=0;                                      //Condicion para salir del ciclo de funcionamiento 
        break;
       }                            
-    }                                                   //Fin del ciclo de funcionamiento del motor de palas
+    }                                                     //Fin del ciclo de funcionamiento del motor de palas
   }
 /*********************************************************ARRANQUE DIRECTO DE MOTOR DE HUSILLO**************************************************************/
    if((Valor_b>=693)&&(Valor_b<=697))                  //boton para accionamiento directo del motor de husillo HACIA ARRIBA 
@@ -160,30 +164,33 @@ void loop() {
    }
    
 /**********************************************************FUNCION TIMER DEL DISOLUTOR***********************************************************************/
-  if((Valor_b>=179)&&(Valor_b<=181))acceso=1;             //if((Valor_b>=179)&&(Valor_b<=181))acceso=1; 
-   while(acceso==1)                                      //Ciclo de configuración del tiempo
+  //if((Valor_b>=179)&&(Valor_b<=181))acceso=1;             //if((Valor_b>=179)&&(Valor_b<=181))acceso=1; 
+  if(digitalRead(timer))acceso=1; 
+   while(acceso==1)                                         //Ciclo de configuración del tiempo
   {
      Valor_s=analogRead(seconds);
-      seg=(Valor_s*60)/864;                           //transforma la lectura del potenciometro en una escala de 60 para SEGUNDOS     1023
-      if(seg<0)seg=seg+76;                           //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 64
+      seg=(Valor_s*60)/1023;                                //transforma la lectura del potenciometro en una escala de 60 para SEGUNDOS     1023
+      if(seg<0)seg=seg+64;                                  //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 64
       lcd.setCursor(1,1);
-      if(seg<10)lcd.print("0");                     //condicional estetico para valores inferiores a 10
+      if(seg<10)lcd.print("0");                             //condicional estetico para valores inferiores a 10
       lcd.print(seg);
       //lcd.clear();
       Valor_m=analogRead(minuts);
-      minut=(Valor_m*60)/1023;                        //transforma la lectura del potenciometro en una escala de 60 para MINUTOS 
-      if(minut<0)minut=minut+73;                    //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 64
+      minut=(Valor_m*60)/1023;                              //transforma la lectura del potenciometro en una escala de 60 para MINUTOS 
+      if(minut<0)minut=minut+64;                            //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 64
       lcd.setCursor(6,1);
-      if(minut<10)lcd.print("0");                   //condicional estetico para valores inferiores a 10
+      if(minut<10)lcd.print("0");                           //condicional estetico para valores inferiores a 10
       lcd.print(minut);
       Valor_h=analogRead(hours);
-      hora=(Valor_h*24)/1023;                           //transforma la lectura del potenciometro en una escala de 24 para HORAS
-      if(hora<0)hora=hora+28;                         //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 28
+      hora=(Valor_h*24)/1023;                              //transforma la lectura del potenciometro en una escala de 24 para HORAS
+      if(hora<0)hora=hora+28;                              //esta linea es para compensar el extraño error de conversion, no me explico el por que descompensa a partir de la mitad un valor de 28
       lcd.setCursor(10,1);
-      if(hora<10)lcd.print("0");                      //condicional estetico para valores inferiores a 10
+      if(hora<10)lcd.print("0");                           //condicional estetico para valores inferiores a 10
       lcd.print(hora);
       Valor_b=analogRead(menu);
-      if(Valor_b>=465 && Valor_b<=468)
+      //if(Valor_b>=465 && Valor_b<=468)
+      // if(digitalRead(inic))
+      if((Valor_b>=1015)&&(Valor_b<=1023))
       {
         Starter(seg,minut,hora);
         break;
@@ -230,8 +237,11 @@ void Starter(int seg,int minut, int hora)
   lcd.print("time runing");
   digitalWrite(ENAPIN,LOW);
   do{
-      forward(200);
-      if(digitalRead(ACTIONPIN))                   //Condicion de paro de emergencia
+      
+     forward(200);
+     Valor_b=analogRead(menu);
+     // if(digitalRead(ACTIONPIN))                   //Condicion de paro de emergencia
+     if((Valor_b>=835)&&(Valor_b<=840))              //Condicion de paro de emergencia
       {
         digitalWrite(ENAPIN,HIGH);                 //Si la condicion de arriba se cumple, se inhabilita el ENAPIN y para el motor en pleno giro
         break;                                     // sale del ciclo while que mantiene el giro durante el tiempo determinado
